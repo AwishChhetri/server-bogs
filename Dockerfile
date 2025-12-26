@@ -1,6 +1,6 @@
-FROM php:8.2-cli
+FROM php:8.4-cli
 
-# System deps
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -10,20 +10,20 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     && docker-php-ext-install pdo pdo_mysql zip
 
-# Composer
+# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# App directory
+# Set working directory
 WORKDIR /app
 
-# Copy files
+# Copy application files
 COPY . .
 
-# Install PHP deps
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Permissions
+# Fix permissions for Laravel
 RUN chmod -R 775 storage bootstrap/cache
 
-# IMPORTANT: Railway uses $PORT
+# Railway-required start command
 CMD php artisan serve --host=0.0.0.0 --port=$PORT
