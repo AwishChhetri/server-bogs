@@ -1,29 +1,28 @@
 FROM php:8.4-cli
 
-# Install system dependencies
+# System + Postgres deps
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libzip-dev \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql zip
+    git unzip libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
-WORKDIR /app
+# App directory
+WORKDIR /var/www
 
-# Copy application files
+# Copy app
 COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Fix permissions for Laravel
-RUN chmod -R 775 storage bootstrap/cache
+# Permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Railway-required start command
-CMD php artisan serve --host=0.0.0.0 --port=$PORT
+# Copy start script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+EXPOSE 8000
